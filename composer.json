@@ -1,0 +1,67 @@
+{
+    "name": "vartruexuan/yii-excel",
+    "description": "excel导入导出组件",
+    "homepage": "https://github.com/vartruexuan/yii-excel",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "guozhaoxuan",
+            "email": "guozhaoxuanx@163.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "overtrue/http": "^1.2",
+        "creocoder/yii2-flysystem": "^1.1",
+        "ramsey/uuid": "*"
+    },
+    "require-dev": {
+        "brainmaestro/composer-git-hooks": "^2.8",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "mockery/mockery": "^1.2",
+        "phpunit/phpunit": "^9.0",
+        "vimeo/psalm": "^4.10",
+        "jetbrains/phpstorm-attributes": "^1.0"
+    },
+    "autoload": {
+        "files": [
+        ],
+        "psr-4": {
+            "vartruexuan\\excel\\": "src"
+        }
+    },
+    "extra": {
+        "hooks": {
+            "pre-commit": [
+                "composer check-style",
+                "composer test"
+            ],
+            "pre-push": [
+                "composer test",
+                "composer check-style"
+            ]
+        },
+        "vartruexuan": {
+            "config": "vartruexuan\\excel\\ConfigProvider"
+        }
+    },
+    "scripts": {
+        "post-update-cmd": [
+        ],
+        "post-merge": "",
+        "post-install-cmd": [
+        ],
+        "cghooks": "vendor/bin/cghooks",
+        "check-style": "php-cs-fixer fix --using-cache=no --diff --dry-run --ansi",
+        "fix-style": "php-cs-fixer fix --using-cache=no --ansi",
+        "test": "phpunit --colors",
+        "psalm": "psalm --show-info=true --no-cache",
+        "psalm-fix": "psalm --no-cache --alter --issues=MissingReturnType,MissingParamType"
+    },
+    "scripts-descriptions": {
+        "test": "Run all tests.",
+        "check-style": "Run style checks (only dry run - no fixing!).",
+        "fix-style": "Run style checks and fix violations."
+    }
+
+}
