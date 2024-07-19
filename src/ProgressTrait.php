@@ -10,6 +10,26 @@ use yii\helpers\Json;
  */
 trait ProgressTrait
 {
+    /**
+     * 进度信息失效时长(秒)
+     *
+     * @var float|int
+     */
+    public $progressExpireTime = 60 * 60;
+
+    /**
+     * 是否允许写入进度
+     * 
+     * @var bool 
+     */
+    public $isEnableProgress = true;
+
+    /**
+     * 是否允许推送信息
+     * 
+     * @var bool 
+     */
+    public $isEnablePushMessage = true;
 
 
     /**
@@ -29,7 +49,6 @@ trait ProgressTrait
      *   1.token
      */
     public const PROGRESS_KEY_MESSAGE = 'Excel:progress:%s:message';
-
 
     // 进度状态
     public const PROGRESS_STATUS_AWAIT = 1; // 待处理

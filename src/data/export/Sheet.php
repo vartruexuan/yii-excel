@@ -37,12 +37,19 @@ class Sheet extends BaseObject
      *
      * @var int
      */
-    public int $pageCount = 2000;
+    public int $pageSize = 2000;
 
     /**
      * 数据
+     *  1. 数据回调
+     *   `
+     *      function(ExportCallbackParam $callbackParam){
+     *         // 执行业务数据查询
+     *     }
+     * `
+     *  2. 数据
      *
-     * @var
+     * @var callable|array
      */
     public $data;
 
@@ -100,9 +107,9 @@ class Sheet extends BaseObject
      *
      * @return int
      */
-    public function getPageCount()
+    public function getPageSize()
     {
-        return $this->pageCount;
+        return $this->pageSize;
 
     }
 

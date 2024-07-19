@@ -55,6 +55,10 @@ class Sheet extends BaseObject
 
     /**
      * 列头字段映射信息
+     *  [
+     *      '标题' => 'title',
+     *      // ...
+     * ]
      *
      * @var array
      */

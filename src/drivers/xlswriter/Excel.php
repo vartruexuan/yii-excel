@@ -50,40 +50,64 @@ class Excel extends ExcelAbstract
          *
          * @var \vartruexuan\excel\data\export\Sheet $sheet
          */
-        foreach ($config->getSheets() as $key => $sheet) {
-            if ($key > 0) {
-                $this->excel->addSheet($sheet->getName());
-            }
-            $this->excel->header($sheet->getHeaders());
-            $count = $sheet->getCount();
-            $pageCount = $sheet->getPageCount();
-            $data = $sheet->getData();
-            $this->initSheetProgress($token, $sheet->getName(), $sheet->getCount());
-            if (is_callable($data)) {
-                $pageNum = ceil($count / $pageCount);
-                $page = 1;
-                do {
-                    $list = $this->exportDataFunc($data, $config, $page, $pageCount, $count, $sheet->getName());
-                    $listCount = count($list ?? []);
-                    if ($list) {
-                        $this->excel->data($sheet->formatList($list));
-                    }
-                    $progressStatus = ($count <= 0 || ($listCount < $pageCount || $pageNum <= $page)) ? self::PROGRESS_STATUS_END : self::PROGRESS_STATUS_PROCESS;
-                    $this->setSheetProgress($token, $sheet->getName(), $progressStatus, $listCount, $listCount);
-                    $page++;
-                } while ($count > 0 && $listCount >= $pageCount && ($pageNum >= $page));
-            } else {
-                $this->excel->data($sheet->formatList($data));
-                $listCount = count($data ?? []);
-                $this->setSheetProgress($token, $sheet->getName(), self::PROGRESS_STATUS_END, $listCount, $listCount);
-            }
+        foreach (array_values($config->getSheets()) as $index => $sheet) {
+            $this->exportSheet($sheet, $config, $index);
         }
 
-        // 输出对应文件
         $this->excel->output();
 
         return $filePath;
     }
+
+    /**
+     * 导出页码
+     *
+     * @param \vartruexuan\excel\data\export\Sheet $sheet
+     * @param $index
+     * @return void
+     */
+    protected function exportSheet(\vartruexuan\excel\data\export\Sheet $sheet, ExportConfig $config, $index = 0)
+    {
+        $token = $config->getToken();
+
+        if ($index > 0) {
+            $this->excel->addSheet($sheet->getName());
+        }
+
+        // header
+        $this->excel->header($sheet->getHeaders());
+
+        $totalCount = $sheet->getCount();
+        $pageSize = $sheet->getPageSize();
+        $dataCallback = $sheet->getData();
+        $isCallback = is_callable($dataCallback);
+
+        $this->initSheetProgress($token, $sheet->getName(), $totalCount);
+
+        // 导出数据
+        do {
+            $page = 1;
+            $pageNum = ceil($totalCount / $pageSize);
+
+            $list = $dataCallback;
+            if ($isCallback) {
+                $list = $this->exportDataCallback($dataCallback, $config, $sheet, $page, $pageSize, $totalCount);
+            }
+            $listCount = count($list ?? []);
+            if ($list) {
+                $this->excel->data($sheet->formatList($list));
+            }
+            $isEnd = !$isCallback || $totalCount <= 0 || ($listCount < $pageSize || $pageNum <= $page);
+            $progressStatus = $isEnd ? self::PROGRESS_STATUS_END : self::PROGRESS_STATUS_PROCESS;
+
+            $this->setSheetProgress($token, $sheet->getName(), $progressStatus, $listCount, $listCount);
+
+            $page++;
+
+        } while ($totalCount > 0 && is_callable($dataCallback) && $listCount >= $pageSize && ($pageNum >= $page));
+
+    }
+
 
     /**
      * 导入
@@ -99,69 +123,101 @@ class Excel extends ExcelAbstract
         ]);
         $filePath = $config->getTempPath();
         $fileName = basename($filePath);
+
+        // 校验文件
         $this->checkFile($filePath);
-        // 打开文件
+
         $this->excel->openFile($fileName);
         $sheetList = $this->excel->sheetList();
 
-        // 初始化进度信息
+
         $this->setProgressInfo($token, array_map('strtolower', $sheetList), self::PROGRESS_STATUS_PROCESS);
         /**
          * 页配置
          *
-         * @var Sheet $sheetConfig
+         * @var Sheet $sheet
          */
-        foreach ($config->getSheets() as $sheetConfig) {
-            $sheetName = $sheetConfig->name;
-            if ($sheetConfig->readType == Sheet::SHEET_READ_TYPE_INDEX) {
-                $sheetName = $sheetList[$sheetConfig->index];
-            }
-
-            $this->excel->openSheet($sheetName);
-
-            $header = [];
-            if ($sheetConfig->isSetHeader) {
-                // 跳过指定行
-                $header = $this->excel->nextRow();
-                $header = $sheetConfig->getHeader($header);
-            }
-            // 返回全量数据
-            if ($sheetConfig->isReturnSheetData) {
-                $sheetData = $this->excel->getSheetData();
-                $sheetDataCount = count($sheetData ?? []);
-            }
-            $this->initSheetProgress($token, $sheetName, $sheetDataCount ?? 0);
-            if ($sheetConfig->callback || $header) {
-                if ($sheetConfig->isReturnSheetData) {
-                    foreach ($sheetData as $key => &$row) {
-                        if ($header) {
-                            $row = $sheetConfig->formatRowByHeader($row, $header);
-                        }
-                        // 执行回调
-                        if ($sheetConfig->callback && is_callable($sheetConfig->callback)) {
-                            $this->importRowCallback($sheetConfig->callback, $row, $this, $config, $sheetName);
-                        }
-                    }
-                    $importData->addSheetData($sheetData, $sheetName);
-                } else {
-                    // 执行回调
-                    if ($sheetConfig->callback) {
-                        while (null !== $row = $this->excel->nextRow()) {
-                            $this->importRowCallback($sheetConfig->callback, $sheetConfig->formatRowByHeader($row, $header), $this, $sheetConfig, $sheetName);
-                        }
-                    }
-                }
-            }
-            $this->setSheetProgress($token, $sheetName, self::PROGRESS_STATUS_END);
+        foreach (array_values($config->getSheets()) as $sheet) {
+            $this->importSheet($sheet, $config, $importData);
         }
 
         // 删除临时文件
         @$this->deleteFile($filePath);
-
         $this->excel->close();
+
         return $importData;
     }
 
+
+    /**
+     * 导出页码
+     *
+     * @param Sheet $sheet
+     * @return void
+     */
+    protected function importSheet(Sheet $sheet, ImportConfig $config, ImportData &$importData)
+    {
+        $token = $config->getToken();
+
+        $sheetName = $sheet->name;
+        if ($sheet->readType == Sheet::SHEET_READ_TYPE_INDEX) {
+            $sheetName = $sheetList[$sheet->index];
+        }
+
+        $this->excel->openSheet($sheetName);
+
+        $header = [];
+
+        if ($sheet->isSetHeader) {
+            if ($sheet->headerIndex > 1) {
+                // 跳过指定行
+                $this->excel->setSkipRows($sheet->headerIndex - 1);
+            }
+            $header = $this->excel->nextRow();
+            $header = $sheet->getHeader($header);
+        }
+
+        // 返回全量数据
+        if ($sheet->isReturnSheetData) {
+            $sheetData = $this->excel->getSheetData();
+            $sheetDataCount = count($sheetData ?? []);
+        }
+
+        $this->initSheetProgress($token, $sheetName, $sheetDataCount ?? 0);
+
+        if ($sheet->callback || $header) {
+            if ($sheet->isReturnSheetData) {
+                foreach ($sheetData as $key => &$row) {
+                    $this->rowCallback($config,$sheet,$row, $header);
+                }
+                $importData->addSheetData($sheetData, $sheetName);
+            } else {
+                // 执行回调
+                while (null !== $row = $this->excel->nextRow()) {
+                    $this->rowCallback($config,$sheet,$row, $header);
+                }
+            }
+        }
+        $this->setSheetProgress($token, $sheetName, self::PROGRESS_STATUS_END);
+    }
+
+    /**
+     * 执行行回调
+     *
+     * @param $row
+     * @param $header
+     * @return void
+     */
+    protected function rowCallback(ImportConfig $config,Sheet $sheet,$row, $header = null)
+    {
+        if ($header) {
+            $row = $sheet->formatRowByHeader($row, $header);
+        }
+        // 执行回调
+        if (is_callable($sheet->callback)) {
+            $this->importRowCallback($sheet->callback, $config, $sheet, $row);
+        }
+    }
 
     /**
      * 校验文件mimeType类型

@@ -4,10 +4,12 @@ namespace vartruexuan\excel;
 
 use Overtrue\Http\Client;
 use creocoder\flysystem\Filesystem;
+use vartruexuan\excel\data\export\ExportCallbackParam;
 use vartruexuan\excel\data\export\ExportConfig;
 use vartruexuan\excel\data\export\ExportData;
 use vartruexuan\excel\data\import\ImportConfig;
 use vartruexuan\excel\data\import\ImportData;
+use vartruexuan\excel\data\import\ImportRowCallbackParam;
 use vartruexuan\excel\data\import\Sheet;
 use vartruexuan\excel\events\ErrorEvent;
 use vartruexuan\excel\events\ExportEvent;
@@ -33,7 +35,6 @@ abstract class ExcelAbstract extends Component
 {
     use StaticInstanceTrait;
     use ProgressTrait;
-
 
     /**
      * 导出之前
@@ -87,13 +88,6 @@ abstract class ExcelAbstract extends Component
      */
     public $fileSystem = 'filesystem';
 
-
-    /**
-     * 进度信息失效时长(秒)
-     *
-     * @var float|int
-     */
-    public $progressExpireTime = 60 * 60;
 
     /**
      * 初始化
@@ -179,6 +173,7 @@ abstract class ExcelAbstract extends Component
                     $url = $this->getFileSystemUrl($config->path);
                 }
                 $exportData->setPath($url);
+
                 $this->setProgressInfo($token, null, self::PROGRESS_STATUS_END, [
                     'url' => $url,
                 ]);
@@ -443,36 +438,23 @@ abstract class ExcelAbstract extends Component
     }
 
     /**
-     * 行回调
+     * 导入行回调
      *
      * @param callable $callback
-     * @param array $row
-     * @param ExcelAbstract $excel
      * @param ImportConfig $config
-     * @param string $sheetName
-     * @param bool $isSetProgress
-     * @param int $status
-     * @return mixed
+     * @param Sheet $sheet
+     * @param array $row
+     *
+     * @return mixed|null
      */
-    protected function importRowCallback(callable $callback, array $row, ExcelAbstract $excel, ImportConfig $config, string $sheetName, $isSetProgress = true, $status = self::PROGRESS_STATUS_PROCESS)
+    protected function importRowCallback(callable $callback, ImportConfig $config, Sheet $sheet, array $row)
     {
-        $errorMessage = null;
-        try {
-            $result = call_user_func($callback, $row, $excel, $config);
-        } catch (\Throwable $exception) {
-            $errorMessage = $exception->getMessage();
-        }
-        // 设置进度信息
-        if ($isSetProgress) {
-            $prgress = 1;
-            if (!$errorMessage) {
-                $success = 1;
-            } else {
-                $fail = 1;
-            }
-            $this->setSheetProgress($config->getToken(), $sheetName, $status, $prgress ?? 0, $success ?? 0, $fail ?? 0);
-        }
-        return $result ?? null;
+        return call_user_func($callback, new ImportRowCallbackParam([
+            'excel' => $this,
+            'importConfig' => $config,
+            'row' => $row,
+            'sheet' => $sheet,
+        ]));
     }
 
 
@@ -488,9 +470,16 @@ abstract class ExcelAbstract extends Component
      * @param string $sheetName
      * @return mixed
      */
-    protected function exportDataFunc(callable $callback, ExportConfig $config, int $page, int $pageCount, ?int $count, string $sheetName)
+    protected function exportDataCallback(callable $callback, ExportConfig $config, \vartruexuan\excel\data\export\Sheet $sheet, int $page, int $pageSize, ?int $totalCount)
     {
-        return call_user_func($callback, $config, $page, $pageCount, $count, $sheetName, $this);
+        return call_user_func($callback, new ExportCallbackParam([
+            'exportConfig' => $config,
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'sheet' => $sheet,
+            'totalCount' => $totalCount,
+            'excel' => $this,
+        ]));
     }
 
 
