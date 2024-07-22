@@ -26,7 +26,7 @@ class ExportDataEvent extends Event
      *
      * @var array
      */
-    public array $data = [];
+    public ?array $list = [];
 
 
 }

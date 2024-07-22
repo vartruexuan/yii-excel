@@ -143,7 +143,7 @@ class ExcelProgressBehavior extends Behavior
     {
         $token = $event->exportCallbackParam->exportConfig->getToken();
         $sheet = $event->exportCallbackParam->sheet;
-        $listCount = count($event->data);
+        $listCount = count($event->list);
         $this->getProgressInstance()->setSheetProgress($token, $sheet->getName(), ProgressData::PROGRESS_STATUS_PROCESS, $listCount, $listCount);
     }
 

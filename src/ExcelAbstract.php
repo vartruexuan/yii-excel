@@ -25,20 +25,17 @@ use Ramsey\Uuid\Uuid;
 use yii\base\Component;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
-use yii\bootstrap5\Progress;
 use yii\helpers\FileHelper;
 use yii\base\BaseObject;
 use yii\base\StaticInstanceTrait;
 use yii\di\Instance;
 use yii\helpers\Inflector;
-use yii\helpers\Json;
 use yii\queue\Queue;
 use yii\redis\Connection;
 
 abstract class ExcelAbstract extends Component
 {
     use StaticInstanceTrait;
-    use ProgressTrait;
 
     /**
      * 导出之前
@@ -190,7 +187,7 @@ abstract class ExcelAbstract extends Component
         }
 
         if (!$this->progress instanceof ExcelProgress) {
-            $this->progress = Instance::ensure($this->fileSystem, ExcelProgress::class);
+            $this->progress = Instance::ensure($this->progress, ExcelProgress::class);
         }
 
     }
@@ -231,6 +228,7 @@ abstract class ExcelAbstract extends Component
             $event = new ExportEvent([
                 'exportConfig' => $config,
             ]);
+
             $this->trigger(self::ENVENT_BEFORE_EXPORT, $event);
 
             // 异步
@@ -414,7 +412,7 @@ abstract class ExcelAbstract extends Component
      *
      * @param callable $callback 回调
      * @param int $page 页码
-     * @param int $pageCount 限制每页数量
+     * @param int $pageSize 限制每页数量
      * @param ?int $count 总数
      * @param $param 额外参数
      * @param string $token
@@ -434,7 +432,7 @@ abstract class ExcelAbstract extends Component
         ]);
 
         $event = new ExportDataEvent([
-            'exportCallbackParam' => ExportCallbackParam,
+            'exportCallbackParam' => $exportCallbackParam,
         ]);
 
         $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
@@ -442,7 +440,7 @@ abstract class ExcelAbstract extends Component
         // 执行回调
         $result = call_user_func($callback, $exportCallbackParam);
 
-        $event->data = $result;
+        $event->list = $result;
 
         $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
 

@@ -8,7 +8,6 @@ use yii\base\StaticInstanceTrait;
 use vartruexuan\excel\events\ProgressEvent;
 use yii\base\Component;
 use yii\di\Instance;
-use yii\helpers\Json;
 use yii\queue\Queue;
 use yii\redis\Connection;
 
@@ -111,6 +110,7 @@ class ExcelProgress extends Component
         if ($data) {
             $progressRecord->data = $data;
         }
+
 
         $this->redis->set($this->getKeyByProgressRecord($token), $this->serializeProgressRecord($progressRecord));
 

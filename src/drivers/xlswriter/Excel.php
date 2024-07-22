@@ -64,9 +64,9 @@ class Excel extends ExcelAbstract
             $this->exportSheet($sheet, $config, $index);
         }
 
-        $this->trigger(static::EVENT_BEFORE_EXPORT_EXCEL, $event);
-
         $this->excel->output();
+
+        $this->trigger(static::EVENT_BEFORE_EXPORT_EXCEL, $event);
 
         return $filePath;
     }
@@ -101,11 +101,11 @@ class Excel extends ExcelAbstract
         $data = $sheet->getData();
         $isCallback = is_callable($data);
 
+        $page = 1;
+        $pageNum = ceil($totalCount / $pageSize);
+
         // 导出数据
         do {
-            $page = 1;
-            $pageNum = ceil($totalCount / $pageSize);
-
             $list = $dataCallback = $data;
 
             if (!$isCallback) {
@@ -126,10 +126,10 @@ class Excel extends ExcelAbstract
             $isEnd = !$isCallback || $totalCount <= 0 || ($listCount < $pageSize || $pageNum <= $page);
 
             $page++;
-
         } while (!$isEnd);
 
-        $this->trigger(static::EVENT_BEFORE_EXPORT_SHEET, $event);
+        $this->trigger(static::EVENT_AFTER_EXPORT_SHEET, $event);
+
     }
 
 
