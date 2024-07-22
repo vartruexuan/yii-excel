@@ -6,6 +6,11 @@ use vartruexuan\excel\data\export\ExportConfig;
 use vartruexuan\excel\data\import\ImportConfig;
 use vartruexuan\excel\data\import\ImportData;
 use vartruexuan\excel\data\import\Sheet;
+use vartruexuan\excel\events\ExportEvent;
+use vartruexuan\excel\events\ExportSheetEvent;
+use vartruexuan\excel\events\ImportDataEvent;
+use vartruexuan\excel\events\ImportEvent;
+use vartruexuan\excel\events\ImportSheetEvent;
 use vartruexuan\excel\ExcelAbstract;
 use vartruexuan\excel\exceptions\ExcelException;
 use yii\helpers\FileHelper;
@@ -40,11 +45,16 @@ class Excel extends ExcelAbstract
     {
         $token = $config->getToken();
 
+        $event = new ExportEvent([
+            'exportConfig' => $config,
+        ]);
+
         $filePath = $this->getTempFileName('ex_');
         $fileName = basename($filePath);
         $this->excel->fileName($fileName, ($config->sheets[0])->name ?? 'sheet1');
 
-        $this->setProgressInfo($token, $config->getSheetNames(), self::PROGRESS_STATUS_PROCESS);
+        $this->trigger(static::EVENT_BEFORE_EXPORT_EXCEL, $event);
+
         /**
          * 写入页码数据
          *
@@ -53,6 +63,8 @@ class Excel extends ExcelAbstract
         foreach (array_values($config->getSheets()) as $index => $sheet) {
             $this->exportSheet($sheet, $config, $index);
         }
+
+        $this->trigger(static::EVENT_BEFORE_EXPORT_EXCEL, $event);
 
         $this->excel->output();
 
@@ -74,38 +86,50 @@ class Excel extends ExcelAbstract
             $this->excel->addSheet($sheet->getName());
         }
 
+        $event = new ExportSheetEvent([
+            'exportConfig' => $config,
+            'sheet' => $sheet,
+        ]);
+
+        $this->trigger(static::EVENT_BEFORE_EXPORT_SHEET, $event);
+
         // header
         $this->excel->header($sheet->getHeaders());
 
         $totalCount = $sheet->getCount();
         $pageSize = $sheet->getPageSize();
-        $dataCallback = $sheet->getData();
-        $isCallback = is_callable($dataCallback);
-
-        $this->initSheetProgress($token, $sheet->getName(), $totalCount);
+        $data = $sheet->getData();
+        $isCallback = is_callable($data);
 
         // 导出数据
         do {
             $page = 1;
             $pageNum = ceil($totalCount / $pageSize);
 
-            $list = $dataCallback;
-            if ($isCallback) {
-                $list = $this->exportDataCallback($dataCallback, $config, $sheet, $page, $pageSize, $totalCount);
+            $list = $dataCallback = $data;
+
+            if (!$isCallback) {
+                $totalCount = 0;
+                $dataCallback = function () use (&$totalCount, $list) {
+                    return $list;
+                };
             }
+
+            $list = $this->exportDataCallback($dataCallback, $config, $sheet, $page, $pageSize, $totalCount);
+
             $listCount = count($list ?? []);
+
             if ($list) {
                 $this->excel->data($sheet->formatList($list));
             }
-            $isEnd = !$isCallback || $totalCount <= 0 || ($listCount < $pageSize || $pageNum <= $page);
-            $progressStatus = $isEnd ? self::PROGRESS_STATUS_END : self::PROGRESS_STATUS_PROCESS;
 
-            $this->setSheetProgress($token, $sheet->getName(), $progressStatus, $listCount, $listCount);
+            $isEnd = !$isCallback || $totalCount <= 0 || ($listCount < $pageSize || $pageNum <= $page);
 
             $page++;
 
-        } while ($totalCount > 0 && is_callable($dataCallback) && $listCount >= $pageSize && ($pageNum >= $page));
+        } while (!$isEnd);
 
+        $this->trigger(static::EVENT_BEFORE_EXPORT_SHEET, $event);
     }
 
 
@@ -118,6 +142,11 @@ class Excel extends ExcelAbstract
     protected function importExcel(ImportConfig $config): ImportData
     {
         $token = $config->getToken();
+
+        $event = new ImportEvent([
+            'importConfig' => $config,
+        ]);
+
         $importData = new ImportData([
             'token' => $token,
         ]);
@@ -128,16 +157,30 @@ class Excel extends ExcelAbstract
         $this->checkFile($filePath);
 
         $this->excel->openFile($fileName);
+
         $sheetList = $this->excel->sheetList();
+        $sheetNames = [];
 
+        $sheets = array_map(function ($sheet) use (&$sheetNames) {
+            $sheetName = $sheet->name;
+            if ($sheet->readType == Sheet::SHEET_READ_TYPE_INDEX) {
+                $sheetName = $sheetList[$sheet->index];
+                $sheet->name = $sheetName;
+            }
+            $sheetNames[] = $sheetName;
+            return $sheet;
+        }, array_values($config->getSheets()));
 
-        $this->setProgressInfo($token, array_map('strtolower', $sheetList), self::PROGRESS_STATUS_PROCESS);
+        $event->sheetNames = $sheetNames;
+
+        $this->trigger(static::EVENT_BEFORE_IMPORT_EXCEL, $event);
+
         /**
          * 页配置
          *
          * @var Sheet $sheet
          */
-        foreach (array_values($config->getSheets()) as $sheet) {
+        foreach ($sheets as $sheet) {
             $this->importSheet($sheet, $config, $importData);
         }
 
@@ -145,6 +188,7 @@ class Excel extends ExcelAbstract
         @$this->deleteFile($filePath);
         $this->excel->close();
 
+        $this->trigger(static::EVENT_AFTER_IMPORT_EXCEL, $event);
         return $importData;
     }
 
@@ -159,10 +203,14 @@ class Excel extends ExcelAbstract
     {
         $token = $config->getToken();
 
+        $event = new ImportSheetEvent([
+            'importConfig' => $importConfig,
+            'sheet' => $sheet,
+        ]);
+
         $sheetName = $sheet->name;
-        if ($sheet->readType == Sheet::SHEET_READ_TYPE_INDEX) {
-            $sheetName = $sheetList[$sheet->index];
-        }
+
+        $this->trigger(static::EVENT_BEFORE_IMPORT_SHEET, $event);
 
         $this->excel->openSheet($sheetName);
 
@@ -183,22 +231,21 @@ class Excel extends ExcelAbstract
             $sheetDataCount = count($sheetData ?? []);
         }
 
-        $this->initSheetProgress($token, $sheetName, $sheetDataCount ?? 0);
-
         if ($sheet->callback || $header) {
             if ($sheet->isReturnSheetData) {
                 foreach ($sheetData as $key => &$row) {
-                    $this->rowCallback($config,$sheet,$row, $header);
+                    $this->rowCallback($config, $sheet, $row, $header);
                 }
                 $importData->addSheetData($sheetData, $sheetName);
             } else {
                 // 执行回调
                 while (null !== $row = $this->excel->nextRow()) {
-                    $this->rowCallback($config,$sheet,$row, $header);
+                    $this->rowCallback($config, $sheet, $row, $header);
                 }
             }
         }
-        $this->setSheetProgress($token, $sheetName, self::PROGRESS_STATUS_END);
+
+        $this->trigger(static::EVENT_AFTER_IMPORT_SHEET, $event);
     }
 
     /**
@@ -208,7 +255,7 @@ class Excel extends ExcelAbstract
      * @param $header
      * @return void
      */
-    protected function rowCallback(ImportConfig $config,Sheet $sheet,$row, $header = null)
+    protected function rowCallback(ImportConfig $config, Sheet $sheet, $row, $header = null)
     {
         if ($header) {
             $row = $sheet->formatRowByHeader($row, $header);

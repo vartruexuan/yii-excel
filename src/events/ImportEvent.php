@@ -15,4 +15,6 @@ class ImportEvent extends Event
      */
     public ImportConfig $importConfig;
 
+    public array $sheetNames = [];
+
 }

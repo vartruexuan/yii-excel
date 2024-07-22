@@ -26,4 +26,11 @@ class ErrorEvent extends Event
      */
     public $exception;
 
+    /**
+     * 是否终止操作
+     *
+     * @var
+     */
+    public $isEnd = false;
+
 }

@@ -10,9 +10,12 @@ use vartruexuan\excel\data\export\ExportData;
 use vartruexuan\excel\data\import\ImportConfig;
 use vartruexuan\excel\data\import\ImportData;
 use vartruexuan\excel\data\import\ImportRowCallbackParam;
-use vartruexuan\excel\data\import\Sheet;
+use vartruexuan\excel\data\import\Sheet as ImportSheet;
+use vartruexuan\excel\data\export\Sheet as ExportSheet;
 use vartruexuan\excel\events\ErrorEvent;
+use vartruexuan\excel\events\ExportDataEvent;
 use vartruexuan\excel\events\ExportEvent;
+use vartruexuan\excel\events\ImportDataEvent;
 use vartruexuan\excel\events\ImportEvent;
 use vartruexuan\excel\exceptions\ExcelException;
 use vartruexuan\excel\jobs\ExportJob;
@@ -22,6 +25,7 @@ use Ramsey\Uuid\Uuid;
 use yii\base\Component;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
+use yii\bootstrap5\Progress;
 use yii\helpers\FileHelper;
 use yii\base\BaseObject;
 use yii\base\StaticInstanceTrait;
@@ -40,10 +44,44 @@ abstract class ExcelAbstract extends Component
      * 导出之前
      */
     const ENVENT_BEFORE_EXPORT = 'beforeExport';
+
     /**
      * 导出之后
      */
     const ENVENT_AFTER_EXPORT = 'afterExport';
+
+    /**
+     * 执行导入之前
+     */
+
+    const EVENT_BEFORE_EXPORT_EXCEL = 'beforeExportExcel';
+
+    /**
+     * 执行导入之后
+     */
+    const EVENT_AFTER_EXPORT_EXCEL = 'afterExportExcel';
+
+
+    /**
+     * 导出sheet之前
+     */
+    const EVENT_BEFORE_EXPORT_SHEET = 'beforeExportSheet';
+
+    /**
+     * 导出sheet之后
+     */
+    const EVENT_AFTER_EXPORT_SHEET = 'afterExportSheet';
+
+    /**
+     * 导出数据之前
+     */
+    const EVENT_BEFORE_EXPORT_DATA = 'beforeExportData';
+
+    /**
+     * 导出数据之后
+     */
+    const EVENT_AFTER_EXPORT_DATA = 'afterExportData';
+
 
     /**
      * 导入之前
@@ -54,6 +92,37 @@ abstract class ExcelAbstract extends Component
      * 导入之后
      */
     const ENVENT_AFTER_IMPORT = 'afterImport';
+
+    /**
+     * 执行导入之前
+     */
+
+    const EVENT_BEFORE_IMPORT_EXCEL = 'beforeImportExcel';
+
+    /**
+     * 执行导入之后
+     */
+    const EVENT_AFTER_IMPORT_EXCEL = 'afterImportExcel';
+
+    /**
+     * 导入sheet之前
+     */
+    const EVENT_BEFORE_IMPORT_SHEET = 'beforeImportSheet';
+
+    /**
+     * 导入sheet之后
+     */
+    const EVENT_AFTER_IMPORT_SHEET = 'afterImportSheet';
+
+    /**
+     * 导入数据之前
+     */
+    const EVENT_BEFORE_IMPORT_DATA = 'beforeImportData';
+
+    /**
+     * 导入数据之后
+     */
+    const EVENT_AFTER_IMPORT_DATA = 'afterImportData';
 
     /**
      * 设置进度之后
@@ -90,6 +159,16 @@ abstract class ExcelAbstract extends Component
 
 
     /**
+     * 进度操作对象
+     *
+     * @var ExcelProgress
+     */
+    public $progress = [
+        'class' => ExcelProgress::class,
+        'enable' => true,
+    ];
+
+    /**
      * 初始化
      *
      * @return void
@@ -109,6 +188,11 @@ abstract class ExcelAbstract extends Component
         if (!$this->fileSystem instanceof Filesystem) {
             $this->fileSystem = Instance::ensure($this->fileSystem, '\creocoder\flysystem\Filesystem');
         }
+
+        if (!$this->progress instanceof ExcelProgress) {
+            $this->progress = Instance::ensure($this->fileSystem, ExcelProgress::class);
+        }
+
     }
 
     /**
@@ -149,20 +233,20 @@ abstract class ExcelAbstract extends Component
             ]);
             $this->trigger(self::ENVENT_BEFORE_EXPORT, $event);
 
-            $this->initProgressInfo($token);
             // 异步
             if ($config->getIsAsync()) {
-                // 异步不支持直接输出
                 if ($config->getOutPutType() == ExportConfig::OUT_PUT_TYPE_OUT) {
                     throw new ExcelException('Async does not support output type ExportConfig::OUT_PUT_TYPE_OUT');
                 }
                 $exportData->queueId = $this->pushExportQueue($config->setToken($token));
                 return $exportData;
             }
+
             $filePath = $this->exportExcel($config);
 
             // 文件输出
             if ($config->outPutType == ExportConfig::OUT_PUT_TYPE_UPLOAD) {
+
                 // 上传文件
                 if (!$this->fileSystem->writeStream($config->path, fopen($filePath, 'r+'))) {
                     throw new ExcelException('upload file fail');
@@ -174,15 +258,11 @@ abstract class ExcelAbstract extends Component
                 }
                 $exportData->setPath($url);
 
-                $this->setProgressInfo($token, null, self::PROGRESS_STATUS_END, [
-                    'url' => $url,
-                ]);
             } else if ($config->outPutType == ExportConfig::OUT_PUT_TYPE_LOCAL) {
                 if (copy($filePath, $config->getPath()) === false) {
                     throw new ExcelException('copy file fail');
                 }
                 $exportData->setPath($config->getPath());
-                $this->setProgressInfo($token, null, self::PROGRESS_STATUS_END);
             } else {
                 // Set Header
                 header("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -200,27 +280,26 @@ abstract class ExcelAbstract extends Component
                     throw new ExcelException('copy file fail');
                 }
             }
+
+            $event->exportData = $exportData;
+
             $this->trigger(self::ENVENT_AFTER_EXPORT, $event);
+
             // 删除临时文件
             @$this->deleteFile($filePath);
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_END);
+
         } catch (ExcelException $excelException) {
-            // 失败
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_FAIL);
-            $this->setProgressMessage($token, $excelException->getMessage());
             $this->trigger(self::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $excelException,
             ]));
             throw $excelException;
         } catch (\Throwable $exception) {
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_FAIL);
-            $this->setProgressMessage($token, '导出异常');
             $this->trigger(self::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $exception,
             ]));
-            \Yii::error($exception->getMessage(), 'vartruexuan/excel/export');
+            \Yii::error($exception->getMessage(), 'excel/export');
             throw $exception;
         }
 
@@ -245,9 +324,9 @@ abstract class ExcelAbstract extends Component
             $event = new ImportEvent([
                 'importConfig' => $config,
             ]);
+
             $this->trigger(self::ENVENT_BEFORE_IMPORT, $event);
 
-            $this->initProgressInfo($token);
             // 异步
             if ($config->getIsAsync()) {
                 $importData->queueId = $this->pushImportQueue($config->setToken($token));
@@ -276,30 +355,98 @@ abstract class ExcelAbstract extends Component
             $importData = $this->importExcel($config);
 
             $this->trigger(self::ENVENT_AFTER_IMPORT, $event);
-
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_END);
-
         } catch (ExcelException $excelException) {
-            // 失败
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_FAIL);
-            $this->setProgressMessage($token, $excelException->getMessage());
             $this->trigger(self::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $excelException,
             ]));
             throw $excelException;
         } catch (\Throwable $exception) {
-            $this->setProgressInfo($token, null, self::PROGRESS_STATUS_FAIL);
-            $this->setProgressMessage($token, '导入异常');
             $this->trigger(self::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $exception,
             ]));
-            \Yii::error($exception->getMessage(), 'vartruexuan/excel/import');
+            \Yii::error($exception->getMessage(), 'excel/import');
             throw $exception;
         }
 
         return $importData;
+    }
+
+
+    /**
+     * 导入行回调
+     *
+     * @param callable $callback
+     * @param ImportConfig $config
+     * @param Sheet $sheet
+     * @param array $row
+     *
+     * @return mixed|null
+     */
+    protected function importRowCallback(callable $callback, ImportConfig $config, ImportSheet $sheet, array $row)
+    {
+        $importRowCallbackParam = new ImportRowCallbackParam([
+            'excel' => $this,
+            'sheet' => $sheet,
+            'importConfig' => $config,
+            'row' => $row,
+        ]);
+        $event = new ImportDataEvent([
+            'importRowCallbackParam' => $importRowCallbackParam,
+            'row' => $row,
+        ]);
+        $this->trigger(static::EVENT_BEFORE_IMPORT_DATA, $event);
+
+        try {
+            $result = call_user_func($callback, $importRowCallbackParam);
+        } catch (\Throwable $exception) {
+            $event->isSuccess = false;
+        }
+        $this->trigger(static::EVENT_AFTER_IMPORT_DATA, $event);
+
+        return $result;
+    }
+
+
+    /**
+     * 导出数据回调
+     *
+     * @param callable $callback 回调
+     * @param int $page 页码
+     * @param int $pageCount 限制每页数量
+     * @param ?int $count 总数
+     * @param $param 额外参数
+     * @param string $token
+     * @param string $sheetName
+     * @return mixed
+     */
+    protected function exportDataCallback(callable $callback, ExportConfig $config, ExportSheet $sheet, int $page, int $pageSize, ?int $totalCount)
+    {
+        $exportCallbackParam = new ExportCallbackParam([
+            'excel' => $this,
+            'exportConfig' => $config,
+            'sheet' => $sheet,
+
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'totalCount' => $totalCount,
+        ]);
+
+        $event = new ExportDataEvent([
+            'exportCallbackParam' => ExportCallbackParam,
+        ]);
+
+        $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
+
+        // 执行回调
+        $result = call_user_func($callback, $exportCallbackParam);
+
+        $event->data = $result;
+
+        $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
+
+        return $result;
     }
 
 
@@ -344,13 +491,13 @@ abstract class ExcelAbstract extends Component
             $config->setToken($this->buildToken());
         }
         // 格式化页码
-        $sheets = $config->getSheets();
-        foreach ($sheets as &$sheet) {
-            if (!$sheet instanceof Sheet) {
-                $sheet = new Sheet($sheet);
+        $config->setSheets(array_map(function ($sheet) {
+            if (!$sheet instanceof \vartruexuan\excel\data\import\Sheet) {
+                $sheet = new \vartruexuan\excel\data\import\Sheet($sheet);
             }
-        }
-        $config->setSheets($sheets);
+            return $sheet;
+        }), $config->getSheets());
+
         return $config;
     }
 
@@ -362,7 +509,6 @@ abstract class ExcelAbstract extends Component
      */
     protected function formatExportConfig(ExportConfig $config)
     {
-
         if (!$config->getToken()) {
             $config->setToken($this->buildToken());
         }
@@ -436,52 +582,6 @@ abstract class ExcelAbstract extends Component
         // return \Yii::$app->security->generateRandomString();
         return Helper::instance()->uuid4();
     }
-
-    /**
-     * 导入行回调
-     *
-     * @param callable $callback
-     * @param ImportConfig $config
-     * @param Sheet $sheet
-     * @param array $row
-     *
-     * @return mixed|null
-     */
-    protected function importRowCallback(callable $callback, ImportConfig $config, Sheet $sheet, array $row)
-    {
-        return call_user_func($callback, new ImportRowCallbackParam([
-            'excel' => $this,
-            'importConfig' => $config,
-            'row' => $row,
-            'sheet' => $sheet,
-        ]));
-    }
-
-
-    /**
-     * 导出数据回调
-     *
-     * @param callable $callback 回调
-     * @param int $page 页码
-     * @param int $pageCount 限制每页数量
-     * @param ?int $count 总数
-     * @param $param 额外参数
-     * @param string $token
-     * @param string $sheetName
-     * @return mixed
-     */
-    protected function exportDataCallback(callable $callback, ExportConfig $config, \vartruexuan\excel\data\export\Sheet $sheet, int $page, int $pageSize, ?int $totalCount)
-    {
-        return call_user_func($callback, new ExportCallbackParam([
-            'exportConfig' => $config,
-            'page' => $page,
-            'pageSize' => $pageSize,
-            'sheet' => $sheet,
-            'totalCount' => $totalCount,
-            'excel' => $this,
-        ]));
-    }
-
 
     /**
      * 获取命令ID(组件ID)
