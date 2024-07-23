@@ -78,8 +78,7 @@ abstract class ExcelAbstract extends Component
      * 导出数据之后
      */
     const EVENT_AFTER_EXPORT_DATA = 'afterExportData';
-
-
+    
     /**
      * 导入之前
      */
@@ -120,18 +119,12 @@ abstract class ExcelAbstract extends Component
      * 导入数据之后
      */
     const EVENT_AFTER_IMPORT_DATA = 'afterImportData';
-
-    /**
-     * 设置进度之后
-     */
-    const EVENT_AFTER_PROGRESS = 'afterProgress';
-
+    
     /**
      * 发送错误
      */
     const EVENT_ERROR = 'error';
-
-
+    
     /**
      * redis实例
      *
@@ -145,16 +138,14 @@ abstract class ExcelAbstract extends Component
      * @var \yii\queue\Queue
      */
     public $queue = 'queue';
-
-
+    
     /**
      * 文件操作对象
      *
      * @var \creocoder\flysystem\Filesystem
      */
     public $fileSystem = 'filesystem';
-
-
+    
     /**
      * 进度操作对象
      *
@@ -243,41 +234,7 @@ abstract class ExcelAbstract extends Component
             $filePath = $this->exportExcel($config);
 
             // 文件输出
-            if ($config->outPutType == ExportConfig::OUT_PUT_TYPE_UPLOAD) {
-
-                // 上传文件
-                if (!$this->fileSystem->writeStream($config->path, fopen($filePath, 'r+'))) {
-                    throw new ExcelException('upload file fail');
-                }
-                if (method_exists($config, 'getUrl')) {
-                    $url = $config->getUrl($config->path);
-                } else {
-                    $url = $this->getFileSystemUrl($config->path);
-                }
-                $exportData->setPath($url);
-
-            } else if ($config->outPutType == ExportConfig::OUT_PUT_TYPE_LOCAL) {
-                if (copy($filePath, $config->getPath()) === false) {
-                    throw new ExcelException('copy file fail');
-                }
-                $exportData->setPath($config->getPath());
-            } else {
-                // Set Header
-                header("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-                header('Content-Disposition: attachment;filename="' . urlencode($config->getFileName()) . '"');
-                header('Content-Length: ' . filesize($filePath));
-                header('Content-Transfer-Encoding: binary');
-                header('Cache-Control: must-revalidate');
-                header('Cache-Control: max-age=0');
-                header('Pragma: public');
-
-                ob_clean();
-                flush();
-                // 直接输出
-                if (copy($filePath, 'php://output') === false) {
-                    throw new ExcelException('copy file fail');
-                }
-            }
+            $this->exportOutPut($config, $filePath, $exportData);
 
             $event->exportData = $exportData;
 
@@ -449,6 +406,62 @@ abstract class ExcelAbstract extends Component
 
 
     /**
+     * 导出文件输出
+     *
+     * @param ExportConfig $config
+     * @param string $filePath
+     * @param $exportData
+     * @return void
+     * @throws ExcelException
+     */
+    protected function exportOutPut(ExportConfig $config, string $filePath, ExportData &$exportData)
+    {
+        switch ($config->outPutType) {
+            // 上传
+            case ExportConfig::OUT_PUT_TYPE_UPLOAD:
+                if (!$this->fileSystem->writeStream($config->getPath(), fopen($filePath, 'r+'))) {
+                    throw new ExcelException('upload file fail');
+                }
+                if (method_exists($config, 'getUrl')) {
+                    $url = $config->getUrl($config->getPath());
+                } else {
+                    $url = $this->getFileSystemUrl($config->getPath());
+                }
+                $exportData->setPath($url);
+                break;
+            // 本地文件
+            case ExportConfig::OUT_PUT_TYPE_LOCAL:
+                if (copy($filePath, $config->getPath()) === false) {
+                    throw new ExcelException('copy file fail');
+                }
+                $exportData->setPath($config->getPath());
+                break;
+            // 直接输出
+            case ExportConfig::OUT_PUT_TYPE_OUT:
+                // Set Header
+                header("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                header('Content-Disposition: attachment;filename="' . urlencode($config->getFileName()) . '"');
+                header('Content-Length: ' . filesize($filePath));
+                header('Content-Transfer-Encoding: binary');
+                header('Cache-Control: must-revalidate');
+                header('Cache-Control: max-age=0');
+                header('Pragma: public');
+
+                ob_clean();
+                flush();
+                // 直接输出
+                if (copy($filePath, 'php://output') === false) {
+                    throw new ExcelException('copy file fail');
+                }
+                break;
+            default:
+                throw new ExcelException('outPutType error');
+                break;
+        }
+    }
+
+
+    /**
      * 导入异步队列
      *
      * @param ImportConfig $config
@@ -494,7 +507,7 @@ abstract class ExcelAbstract extends Component
                 $sheet = new \vartruexuan\excel\data\import\Sheet($sheet);
             }
             return $sheet;
-        },$config->getSheets()));
+        }, $config->getSheets()));
 
         return $config;
     }

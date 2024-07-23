@@ -66,7 +66,7 @@ class Excel extends ExcelAbstract
 
         $this->excel->output();
 
-        $this->trigger(static::EVENT_BEFORE_EXPORT_EXCEL, $event);
+        $this->trigger(static::EVENT_AFTER_EXPORT_EXCEL, $event);
 
         return $filePath;
     }

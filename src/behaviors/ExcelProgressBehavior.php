@@ -45,8 +45,6 @@ class ExcelProgressBehavior extends Behavior
             ExcelAbstract::EVENT_BEFORE_IMPORT_DATA => 'beforeImportData',
             ExcelAbstract::EVENT_AFTER_IMPORT_DATA => 'afterImportData',
 
-            ExcelAbstract::EVENT_AFTER_PROGRESS => 'afterProgress',
-
             // 错误
             ExcelAbstract::EVENT_ERROR => 'error',
 
@@ -279,8 +277,7 @@ class ExcelProgressBehavior extends Behavior
          * @var  \Throwable $exception
          */
         $exception = $event->exception;
-
-        var_dump($exception->getMessage() . $exception->getTraceAsString());
+        
         // 设置进度信息
         $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_FAIL);
         $this->getProgressInstance($event)->pushProgressMessage($token, $exception?->getMessage());

@@ -108,6 +108,17 @@ class Sheet extends BaseObject
 
 
     /**
+     * 获取name
+     * 
+     * @return string
+     */    
+    public function getName()
+    {
+        return $this->name;
+    }
+    
+    
+    /**
      * 获取最终列头信息
      *
      * @return void
