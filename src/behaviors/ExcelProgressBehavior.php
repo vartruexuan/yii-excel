@@ -13,6 +13,7 @@ use vartruexuan\excel\events\ImportSheetEvent;
 use vartruexuan\excel\ExcelAbstract;
 use vartruexuan\excel\ExcelProgress;
 use yii\base\Behavior;
+use yii\base\Event;
 use yii\bootstrap5\Progress;
 
 /**
@@ -27,8 +28,8 @@ class ExcelProgressBehavior extends Behavior
             // 导出
             ExcelAbstract::ENVENT_BEFORE_EXPORT => 'beforeExport',
             ExcelAbstract::ENVENT_AFTER_EXPORT => 'afterExport',
-            ExcelAbstract::EVENT_BEFORE_IMPORT_EXCEL => 'beforeExportExcel',
-            ExcelAbstract::EVENT_AFTER_IMPORT_EXCEL => 'afterExportExcel',
+            ExcelAbstract::EVENT_BEFORE_EXPORT_EXCEL => 'beforeExportExcel',
+            ExcelAbstract::EVENT_AFTER_EXPORT_EXCEL => 'afterExportExcel',
             ExcelAbstract::EVENT_BEFORE_EXPORT_SHEET => 'beforeExportSheet',
             ExcelAbstract::EVENT_AFTER_EXPORT_SHEET => 'afterExportSheet',
             ExcelAbstract::EVENT_BEFORE_EXPORT_DATA => 'beforeExportData',
@@ -61,7 +62,7 @@ class ExcelProgressBehavior extends Behavior
     public function beforeExport(ExportEvent $event)
     {
         $token = $event->exportConfig->getToken();
-        $this->getProgressInstance()->initProgressRecord($token);
+        $this->getProgressInstance($event)->initProgressRecord($token);
     }
 
     /**
@@ -73,7 +74,7 @@ class ExcelProgressBehavior extends Behavior
     public function afterExport(ExportEvent $event)
     {
         $token = $event->exportConfig->getToken();
-        $this->getProgressInstance()->setProgressRecord($token, null, self::PROGRESS_STATUS_END, [
+        $this->getProgressInstance($event)->setProgressRecord($token, null, self::PROGRESS_STATUS_END, [
             'url' => $event->exportData->path,
         ]);
     }
@@ -87,7 +88,7 @@ class ExcelProgressBehavior extends Behavior
     public function beforeExportExcel(ExportEvent $event)
     {
         $token = $event->exportConfig->getToken();
-        $this->getProgressInstance()->setProgressRecord($token, $event->exportConfig->getSheetNames(), ProgressData::PROGRESS_STATUS_PROCESS);
+        $this->getProgressInstance($event)->setProgressRecord($token, $event->exportConfig->getSheetNames(), ProgressData::PROGRESS_STATUS_PROCESS);
     }
 
 
@@ -110,7 +111,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function beforeExportSheet(ExportSheetEvent $event)
     {
-        $this->getProgressInstance()->initSheetProgress($event->exportConfig->getToken(), $event->sheet->getName(), $event->sheet->getCount());
+        $this->getProgressInstance($event)->initSheetProgress($event->exportConfig->getToken(), $event->sheet->getName(), $event->sheet->getCount());
     }
 
 
@@ -124,7 +125,7 @@ class ExcelProgressBehavior extends Behavior
     {
         $token = $event->exportConfig->getToken();
         $sheetName = $event->sheet->name;
-        $this->getProgressInstance()->setSheetProgress($token, $sheetName, ProgressData::PROGRESS_STATUS_END);
+        $this->getProgressInstance($event)->setSheetProgress($token, $sheetName, ProgressData::PROGRESS_STATUS_END);
     }
 
 
@@ -144,7 +145,7 @@ class ExcelProgressBehavior extends Behavior
         $token = $event->exportCallbackParam->exportConfig->getToken();
         $sheet = $event->exportCallbackParam->sheet;
         $listCount = count($event->list);
-        $this->getProgressInstance()->setSheetProgress($token, $sheet->getName(), ProgressData::PROGRESS_STATUS_PROCESS, $listCount, $listCount);
+        $this->getProgressInstance($event)->setSheetProgress($token, $sheet->getName(), ProgressData::PROGRESS_STATUS_PROCESS, $listCount, $listCount);
     }
 
     /**
@@ -155,7 +156,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function beforeImport(ImportEvent $event)
     {
-        $this->getProgressInstance()->initProgressRecord($event->importConfig->getToken());
+        $this->getProgressInstance($event)->initProgressRecord($event->importConfig->getToken());
     }
 
     /**
@@ -166,7 +167,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function afterImport(ImportEvent $event)
     {
-        $this->getProgressInstance()->setProgressRecord($event->importConfig->getToken(), null, ProgressData::PROGRESS_STATUS_END);
+        $this->getProgressInstance($event)->setProgressRecord($event->importConfig->getToken(), null, ProgressData::PROGRESS_STATUS_END);
     }
 
     /**
@@ -177,7 +178,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function beforeImportExcel(ImportEvent $event)
     {
-        $this->getProgressInstance()->setProgressRecord($event->importConfig->getToken(), array_map('strtolower', $sheetNames), ProgressData::PROGRESS_STATUS_PROCESS);
+        $this->getProgressInstance($event)->setProgressRecord($event->importConfig->getToken(), array_map('strtolower', $sheetNames), ProgressData::PROGRESS_STATUS_PROCESS);
     }
 
     /**
@@ -188,7 +189,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function afterImportExcel(ImportEvent $event)
     {
-        $this->getProgressInstance()->setProgressRecord($event->importConfig->getToken(), null, ProgressData::PROGRESS_STATUS_END);
+        $this->getProgressInstance($event)->setProgressRecord($event->importConfig->getToken(), null, ProgressData::PROGRESS_STATUS_END);
     }
 
 
@@ -202,7 +203,7 @@ class ExcelProgressBehavior extends Behavior
     {
         $token = $event->importConfig->getToken();
         $sheetName = $event->sheet->name;
-        $this->getProgressInstance()->initSheetProgress($token, $sheetName, 0);
+        $this->getProgressInstance($event)->initSheetProgress($token, $sheetName, 0);
     }
 
     /**
@@ -215,7 +216,7 @@ class ExcelProgressBehavior extends Behavior
     {
         $token = $event->importConfig->getToken();
         $sheetName = $event->sheet->name;
-        $this->getProgressInstance()->setSheetProgress($token, $sheetName, ProgressData::PROGRESS_STATUS_END);
+        $this->getProgressInstance($event)->setSheetProgress($token, $sheetName, ProgressData::PROGRESS_STATUS_END);
     }
 
 
@@ -238,7 +239,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function afterImportData(ImportDataEvent $event)
     {
-        $this->getProgressInstance()->setSheetProgress($token, $sheetName,
+        $this->getProgressInstance($event)->setSheetProgress($token, $sheetName,
             ProgressData::PROGRESS_STATUS_PROCESS,
             0,
             1,
@@ -255,10 +256,15 @@ class ExcelProgressBehavior extends Behavior
      */
     public function error(ErrorEvent $event)
     {
+        /**
+         * @var  \Throwable $exception
+         */
         $exception = $event->exception;
+
+        echo $exception->getMessage();
         // 设置进度信息
-        $this->getProgressInstance()->setProgressRecord($event->config->getToken(), null, ProgressData::PROGRESS_STATUS_FAIL);
-        $this->getProgressInstance()->pushProgressMessage($token, $exception?->getMessage());
+        $this->getProgressInstance($event)->setProgressRecord($event->config->getToken(), null, ProgressData::PROGRESS_STATUS_FAIL);
+        $this->getProgressInstance($event)->pushProgressMessage($token, $exception?->getMessage());
     }
 
 
@@ -267,9 +273,14 @@ class ExcelProgressBehavior extends Behavior
      *
      * @return ExcelProgress
      */
-    protected function getProgressInstance()
+    protected function getProgressInstance(Event $event)
     {
-        return ExcelProgress::instance();
+        if ($event->sender instanceof ExcelAbstract) {
+            $progressInstance = $event->sender->progress;
+        } else {
+            $progressInstance = ExcelProgress::instance();
+        }
+        return $progressInstance;
     }
 
 }

@@ -229,7 +229,7 @@ abstract class ExcelAbstract extends Component
                 'exportConfig' => $config,
             ]);
 
-            $this->trigger(self::ENVENT_BEFORE_EXPORT, $event);
+            $this->trigger(static::ENVENT_BEFORE_EXPORT, $event);
 
             // 异步
             if ($config->getIsAsync()) {
@@ -281,19 +281,19 @@ abstract class ExcelAbstract extends Component
 
             $event->exportData = $exportData;
 
-            $this->trigger(self::ENVENT_AFTER_EXPORT, $event);
+            $this->trigger(static::ENVENT_AFTER_EXPORT, $event);
 
             // 删除临时文件
             @$this->deleteFile($filePath);
 
         } catch (ExcelException $excelException) {
-            $this->trigger(self::EVENT_ERROR, new ErrorEvent([
+            $this->trigger(static::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $excelException,
             ]));
             throw $excelException;
         } catch (\Throwable $exception) {
-            $this->trigger(self::EVENT_ERROR, new ErrorEvent([
+            $this->trigger(static::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $exception,
             ]));
@@ -323,7 +323,7 @@ abstract class ExcelAbstract extends Component
                 'importConfig' => $config,
             ]);
 
-            $this->trigger(self::ENVENT_BEFORE_IMPORT, $event);
+            $this->trigger(static::ENVENT_BEFORE_IMPORT, $event);
 
             // 异步
             if ($config->getIsAsync()) {
@@ -352,15 +352,15 @@ abstract class ExcelAbstract extends Component
             // 执行导入
             $importData = $this->importExcel($config);
 
-            $this->trigger(self::ENVENT_AFTER_IMPORT, $event);
+            $this->trigger(static::ENVENT_AFTER_IMPORT, $event);
         } catch (ExcelException $excelException) {
-            $this->trigger(self::EVENT_ERROR, new ErrorEvent([
+            $this->trigger(static::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $excelException,
             ]));
             throw $excelException;
         } catch (\Throwable $exception) {
-            $this->trigger(self::EVENT_ERROR, new ErrorEvent([
+            $this->trigger(static::EVENT_ERROR, new ErrorEvent([
                 'config' => $config,
                 'exception' => $exception,
             ]));
@@ -435,14 +435,14 @@ abstract class ExcelAbstract extends Component
             'exportCallbackParam' => $exportCallbackParam,
         ]);
 
-        $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
+        $this->trigger(static::EVENT_BEFORE_EXPORT_DATA, $event);
 
         // 执行回调
         $result = call_user_func($callback, $exportCallbackParam);
 
         $event->list = $result;
 
-        $this->trigger(self::EVENT_BEFORE_EXPORT_DATA, $event);
+        $this->trigger(static::EVENT_AFTER_EXPORT_DATA, $event);
 
         return $result;
     }

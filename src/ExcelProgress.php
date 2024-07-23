@@ -102,6 +102,7 @@ class ExcelProgress extends Component
             'token' => $token,
         ]);
 
+
         $progressRecord->progress->status = $status;
 
         if ($sheetList !== null) {
@@ -110,7 +111,6 @@ class ExcelProgress extends Component
         if ($data) {
             $progressRecord->data = $data;
         }
-
 
         $this->redis->set($this->getKeyByProgressRecord($token), $this->serializeProgressRecord($progressRecord));
 
@@ -132,15 +132,15 @@ class ExcelProgress extends Component
             return null;
         }
 
-        $progressRecord = $this->unserializeProgressRecord($result, true);
+        $progressRecord = $this->unserializeProgressRecord($result);
 
         // 设置进度
         foreach ($progressRecord->sheetList ?? [] as $sheetName) {
             $progressRecord->sheetListProgress[$sheetName] = $sheetProgress = $this->getSheetProgress($token, $sheetName);
-            $progressRecord->progress->total += $sheetProgress['total'] ?? 0;
-            $progressRecord->progress->progress += $sheetProgress['progress'] ?? 0;
-            $progressRecord->progress->success += $sheetProgress['success'] ?? 0;
-            $progressRecord->progress->fail += $sheetProgress['fail'] ?? 0;
+            $progressRecord->progress->total += $sheetProgress->total ?? 0;
+            $progressRecord->progress->progress += $sheetProgress->progress ?? 0;
+            $progressRecord->progress->success += $sheetProgress->success ?? 0;
+            $progressRecord->progress->fail += $sheetProgress->fail ?? 0;
         }
 
         return $progressRecord;
@@ -284,7 +284,7 @@ class ExcelProgress extends Component
     protected function resetProgressTime($token, $time = null)
     {
         $time = $time > 0 ? $time : $this->getExpireTime();
-        foreach ($this->getAllKeyByProgress() as $key) {
+        foreach ($this->getAllKeyByProgress($token) as $key) {
             $this->redis->expire($key, $time);
         }
     }
@@ -338,11 +338,11 @@ class ExcelProgress extends Component
      *
      * @return array|string[]
      */
-    protected function getAllKeyByProgress()
+    protected function getAllKeyByProgress($token)
     {
         return array_merge([
-            $this->getKeyByProgressRecord(),
-            $this->getKeyByProgressMessage(),
+            $this->getKeyByProgressRecord($token),
+            $this->getKeyByProgressMessage($token),
         ],
             // 页码key
             array_map(function ($sheetName) {
