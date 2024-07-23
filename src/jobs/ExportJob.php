@@ -27,7 +27,7 @@ class ExportJob extends BaseJob
             $this->exportConfig->isAsync = false;
             $this->getExcelInstance()->export($this->exportConfig);
         } catch (\Throwable $exception) {
-            \Yii::error($exception->getMessage(), 'vartruexuan/excel/ExportJob');
+            \Yii::error($exception->getMessage(), 'excel/ExportJob');
             throw $exception;
         }
     }

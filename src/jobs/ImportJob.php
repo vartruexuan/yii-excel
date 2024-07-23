@@ -28,7 +28,7 @@ class ImportJob extends BaseJob
             $this->importConfig->isAsync = false;
             $this->getExcelInstance()->import($this->importConfig);
         } catch (\Throwable $exception) {
-            \Yii::error($exception->getMessage(), 'vartruexuan/excel/ImportJob');
+            \Yii::error($exception->getMessage(), 'excel/ImportJob');
             throw $exception;
         }
 
