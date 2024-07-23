@@ -125,7 +125,7 @@ class ExcelProgress extends Component
      * @param string $token
      * @return ProgressRecord|null
      */
-    public function getProgressRecord(string $token)
+    public function getProgressRecord(string $token, $isGetProgress = false)
     {
         $result = $this->redis->get($this->getKeyByProgressRecord($token));
         if (!$result) {
@@ -134,27 +134,18 @@ class ExcelProgress extends Component
 
         $progressRecord = $this->unserializeProgressRecord($result);
 
-        // 设置进度
-        foreach ($progressRecord->sheetList ?? [] as $sheetName) {
-            $progressRecord->sheetListProgress[$sheetName] = $sheetProgress = $this->getSheetProgress($token, $sheetName);
-            $progressRecord->progress->total += $sheetProgress->total ?? 0;
-            $progressRecord->progress->progress += $sheetProgress->progress ?? 0;
-            $progressRecord->progress->success += $sheetProgress->success ?? 0;
-            $progressRecord->progress->fail += $sheetProgress->fail ?? 0;
+        if ($isGetProgress) {
+            // 设置进度
+            foreach ($progressRecord->sheetList ?? [] as $sheetName) {
+                $progressRecord->sheetListProgress[$sheetName] = $sheetProgress = $this->getSheetProgress($token, $sheetName);
+                $progressRecord->progress->total += $sheetProgress->total ?? 0;
+                $progressRecord->progress->progress += $sheetProgress->progress ?? 0;
+                $progressRecord->progress->success += $sheetProgress->success ?? 0;
+                $progressRecord->progress->fail += $sheetProgress->fail ?? 0;
+            }
         }
 
         return $progressRecord;
-    }
-
-    /**
-     * 查询进度
-     *
-     * @param $token
-     * @return void
-     */
-    public function getProgress($token)
-    {
-        return $this->getProgressRecord($token);
     }
 
 
@@ -340,14 +331,15 @@ class ExcelProgress extends Component
      */
     protected function getAllKeyByProgress($token)
     {
+        $progressRecord = $this->getProgressRecord($token);
         return array_merge([
             $this->getKeyByProgressRecord($token),
             $this->getKeyByProgressMessage($token),
         ],
             // 页码key
-            array_map(function ($sheetName) {
+            array_map(function ($sheetName) use ($token) {
                 return $this->getKeyByProgressSheet($token, $sheetName);
-            }, $progressInfo['sheetList'] ?? []));
+            }, $progressRecord ? $progressRecord->sheetList : []));
     }
 
 

@@ -74,7 +74,7 @@ class ExcelProgressBehavior extends Behavior
     public function afterExport(ExportEvent $event)
     {
         $token = $event->exportConfig->getToken();
-        $this->getProgressInstance($event)->setProgressRecord($token, null, self::PROGRESS_STATUS_END, [
+        $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_END, [
             'url' => $event->exportData->path,
         ]);
     }
@@ -145,7 +145,7 @@ class ExcelProgressBehavior extends Behavior
         $token = $event->exportCallbackParam->exportConfig->getToken();
         $sheet = $event->exportCallbackParam->sheet;
         $listCount = count($event->list);
-        $this->getProgressInstance($event)->setSheetProgress($token, $sheet->getName(), ProgressData::PROGRESS_STATUS_PROCESS, $listCount, $listCount);
+        $this->getProgressInstance($event)->setSheetProgress($token, $sheet->getName(), ProgressData::PROGRESS_STATUS_PROCESS,0, $listCount, $listCount);
     }
 
     /**
@@ -256,14 +256,16 @@ class ExcelProgressBehavior extends Behavior
      */
     public function error(ErrorEvent $event)
     {
+        $token = $event->config->getToken();
+
         /**
          * @var  \Throwable $exception
          */
         $exception = $event->exception;
 
-        echo $exception->getMessage();
+        var_dump($exception->getMessage().$exception->getTraceAsString());
         // 设置进度信息
-        $this->getProgressInstance($event)->setProgressRecord($event->config->getToken(), null, ProgressData::PROGRESS_STATUS_FAIL);
+        $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_FAIL);
         $this->getProgressInstance($event)->pushProgressMessage($token, $exception?->getMessage());
     }
 
