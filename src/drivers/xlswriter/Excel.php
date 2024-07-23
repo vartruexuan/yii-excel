@@ -199,9 +199,9 @@ class Excel extends ExcelAbstract
      * @param Sheet $sheet
      * @return void
      */
-    protected function importSheet(Sheet $sheet, ImportConfig $config, ImportData &$importData)
+    protected function importSheet(Sheet $sheet, ImportConfig $importConfig, ImportData &$importData)
     {
-        $token = $config->getToken();
+        $token = $importConfig->getToken();
 
         $event = new ImportSheetEvent([
             'importConfig' => $importConfig,
@@ -234,13 +234,13 @@ class Excel extends ExcelAbstract
         if ($sheet->callback || $header) {
             if ($sheet->isReturnSheetData) {
                 foreach ($sheetData as $key => &$row) {
-                    $this->rowCallback($config, $sheet, $row, $header);
+                    $this->rowCallback($importConfig, $sheet, $row, $header);
                 }
                 $importData->addSheetData($sheetData, $sheetName);
             } else {
                 // 执行回调
                 while (null !== $row = $this->excel->nextRow()) {
-                    $this->rowCallback($config, $sheet, $row, $header);
+                    $this->rowCallback($importConfig, $sheet, $row, $header);
                 }
             }
         }

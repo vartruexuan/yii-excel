@@ -494,7 +494,7 @@ abstract class ExcelAbstract extends Component
                 $sheet = new \vartruexuan\excel\data\import\Sheet($sheet);
             }
             return $sheet;
-        }), $config->getSheets());
+        },$config->getSheets()));
 
         return $config;
     }

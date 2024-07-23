@@ -190,8 +190,11 @@ class ExcelProgress extends Component
         }
         $key = $this->getKeyByProgressSheet($token, $sheetName);
 
-        $this->initSheetProgress($token, $sheetName, $total);
+        $this->initSheetProgress($token, $sheetName, 0);
 
+        if ($total > 0) {
+            $this->redis->hincrby($key, 'total', $total);
+        }
         if ($progress > 0) {
             $this->redis->hincrby($key, 'progress', $progress);
         }
