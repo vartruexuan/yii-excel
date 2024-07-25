@@ -17,63 +17,15 @@ class ExportTest extends \PHPUnit\Framework\TestCase
      */
     public function testExport()
     {
-        Excel::instance()->export(new ExportConfig([
-            'path' => '/www/export_'.Carbon::now()->format('Y_m_d_H_i_s_u').'.xlsx',
+        Excel::instance()->export(new TestExportConfig([
+            'path' => '/www/export_' . Carbon::now()->format('Y_m_d_H_i_s_u') . '.xlsx',
             'outPutType' => ExportConfig::OUT_PUT_TYPE_LOCAL,
-            'sheets' => [
-                new \vartruexuan\excel\data\export\Sheet([
-                    'name' => 'sheet1',
-                    'columns' => [
-                        new Column([
-                            'title' => 'uniqId',
-                            'key' => 'uniqId',
-                            'field' => 'uniqId',
-                        ]),
-                        new Column([
-                            'title' => '标题',
-                            'key' => 'title',
-                            'field' => 'title',
-                        ]),
-                        new Column([
-                            'title' => 'component',
-                            'key' => 'component',
-                            'field' => 'component',
-                        ]),
-                    ],
-                    'count' => PlatformMenuService::instance()->getCount(),
-                    'data' => function ($page, $pageCount, $total) {
-                        $pageInfo = Helper::getPageInfo($total, $pageCount, $page);
-                        return PlatformMenuService::instance()->getList(null,null,$pageInfo['limit'],$pageInfo['offset'],true);
-                    },
-                ]),
-                new \vartruexuan\excel\data\export\Sheet([
-                    'name' => 'sheet2',
-                    'columns' => [
-                        new Column([
-                            'title' => 'uniqId',
-                            'key' => 'uniqId',
-                            'field' => 'uniqId',
-                        ]),
-                        new Column([
-                            'title' => '标题',
-                            'key' => 'title',
-                            'field' => 'title',
-                        ]),
-                        new Column([
-                            'title' => 'component',
-                            'key' => 'component',
-                            'field' => 'component',
-                        ]),
-                    ],
-                    'count' => PlatformMenuService::instance()->getCount(),
-                    'data' => function ($page, $pageCount, $total) {
-                        $pageInfo = Helper::getPageInfo($total, $pageCount, $page);
-                        return PlatformMenuService::instance()->getList(null,null,$pageInfo['limit'],$pageInfo['offset'],true);
-                    },
-                ])
+            // 额外参数
+            'param' => [
+                'age' => 1
             ]
-        ]));
 
+        ]));
     }
 
 }

@@ -14,8 +14,6 @@ use vartruexuan\excel\ExcelAbstract;
 use vartruexuan\excel\ExcelProgress;
 use yii\base\Behavior;
 use yii\base\Event;
-use yii\bootstrap5\Progress;
-
 /**
  * 进度行为
  */
@@ -277,7 +275,7 @@ class ExcelProgressBehavior extends Behavior
          * @var  \Throwable $exception
          */
         $exception = $event->exception;
-        
+
         // 设置进度信息
         $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_FAIL);
         $this->getProgressInstance($event)->pushProgressMessage($token, $exception?->getMessage());

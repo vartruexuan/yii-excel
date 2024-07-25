@@ -19,19 +19,15 @@ class TestImportConfig extends ImportConfig
                     '姓名' => 'name',
                     '身高' => 'height',
                 ],
-                'callback' => function ($row, ExcelAbstract $excel, ImportConfig $config) {
+                'callback' => function (\vartruexuan\excel\data\import\ImportRowCallbackParam $importRowCallbackParam) {
                     // 执行行回调
-                    var_dump($row);
-
-                    sleep(10);
-
-                    return true;
+                    var_dump($importRowCallbackParam->$row);
+                    sleep(1);
                 }
             ])
 
         ]);
-        return parent::getSheets();
-
+        return $this->sheets;
     }
 
 
