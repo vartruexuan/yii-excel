@@ -59,6 +59,7 @@ class ExcelProgressBehavior extends Behavior
     {
         $token = $event->exportConfig->getToken();
         $this->getProgressInstance($event)->initProgressRecord($token);
+
     }
 
     /**
@@ -69,6 +70,7 @@ class ExcelProgressBehavior extends Behavior
      */
     public function afterExport(ExportEvent $event)
     {
+
         $token = $event->exportConfig->getToken();
         $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_END, [
             'url' => $event->exportData->path,

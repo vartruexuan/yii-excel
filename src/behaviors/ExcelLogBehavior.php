@@ -14,7 +14,6 @@ use vartruexuan\excel\ExcelAbstract;
 use vartruexuan\excel\ExcelProgress;
 use yii\base\Behavior;
 use yii\base\Event;
-use yii\bootstrap5\Progress;
 use yii\helpers\VarDumper;
 
 /**

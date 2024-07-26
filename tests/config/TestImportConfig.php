@@ -21,7 +21,7 @@ class TestImportConfig extends ImportConfig
                 ],
                 'callback' => function (\vartruexuan\excel\data\import\ImportRowCallbackParam $importRowCallbackParam) {
                     // 执行行回调
-                    var_dump($importRowCallbackParam->$row);
+                    var_dump($importRowCallbackParam->row);
                     sleep(1);
                 }
             ])
