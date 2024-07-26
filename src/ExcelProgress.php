@@ -15,14 +15,6 @@ class ExcelProgress extends Component
 {
     use StaticInstanceTrait;
 
-
-    /**
-     * 是否允许写入进度
-     *
-     * @var bool
-     */
-    public $enable = true;
-
     /**
      * 前缀
      *
@@ -185,9 +177,6 @@ class ExcelProgress extends Component
      */
     public function setSheetProgress(string $token, string $sheetName, ?int $status = null, $total = 0, int $progress = 0, int $success = 0, int $fail = 0)
     {
-        if (!$this->enable) {
-            return;
-        }
         $key = $this->getKeyByProgressSheet($token, $sheetName);
 
         $this->initSheetProgress($token, $sheetName, 0);
@@ -239,10 +228,6 @@ class ExcelProgress extends Component
      */
     public function pushProgressMessage($token, $message)
     {
-        if (!$this->enable) {
-            return;
-        }
-
         $this->redis->lpush($this->getKeyByProgressMessage($token), $message);
 
         $this->resetProgressTime($token);
