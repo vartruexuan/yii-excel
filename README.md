@@ -320,7 +320,8 @@ class DemoImportConfig extends ImportConfig
 }
 
 ```
-- 进度
+### 进度
+- 进度查询
 ```php
 /**
  * 进度信息
@@ -332,7 +333,7 @@ $progressRecord = \Yii::$app->excel->progress->getProgressRecord($token,true);
 // $progressRecord->progress->status 进度状态 1.待处理 2.处理中 3.完成 4.失败 
 // $progressRecord->sheetListProgress 页码进度信息
 ```
-- 获取消息
+- 消息息输出查询
 ```php
 /**
  *  token 导入/导出时返回的token
