@@ -11,10 +11,15 @@ excel 导入导出,支持异步、进度构建。
 ## 组件能力
 
 - [x] 导入、导出excel
-- [x] 支持异步操作,进度构建,信息构建
+- [x] 支持异步操作,进度构建,进度消息输出
 - [x] 格式 `xlsx` 
 - [ ] ...
 # 安装
+- 安装依赖拓展 [xlswriter](https://xlswriter-docs.viest.me/zh-cn/an-zhuang)
+```bash
+pecl install xlswriter
+```
+- 安装组件
 ```shell
 composer require vartruexuan/yii-excel
 ```
