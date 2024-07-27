@@ -78,7 +78,7 @@ abstract class ExcelAbstract extends Component
      * 导出数据之后
      */
     const EVENT_AFTER_EXPORT_DATA = 'afterExportData';
-    
+
     /**
      * 导入之前
      */
@@ -119,12 +119,12 @@ abstract class ExcelAbstract extends Component
      * 导入数据之后
      */
     const EVENT_AFTER_IMPORT_DATA = 'afterImportData';
-    
+
     /**
      * 发送错误
      */
     const EVENT_ERROR = 'error';
-    
+
     /**
      * redis实例
      *
@@ -138,14 +138,14 @@ abstract class ExcelAbstract extends Component
      * @var \yii\queue\Queue
      */
     public $queue = 'queue';
-    
+
     /**
      * 文件操作对象
      *
      * @var \creocoder\flysystem\Filesystem
      */
     public $fileSystem = 'filesystem';
-    
+
     /**
      * 进度操作对象
      *
@@ -153,7 +153,6 @@ abstract class ExcelAbstract extends Component
      */
     public $progress = [
         'class' => ExcelProgress::class,
-        'enable' => true,
     ];
 
     /**
