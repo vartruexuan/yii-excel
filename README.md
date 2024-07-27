@@ -14,6 +14,9 @@ excel 导入导出,支持异步、进度构建。
 - [x] 支持异步操作,进度构建,进度消息输出
 - [x] 格式 `xlsx` 
 - [ ] ...
+
+![效果图](https://github.com/user-attachments/assets/eedc21bc-1b3c-4629-9ed4-92ff32441684)
+
 # 安装
 - 安装依赖拓展 [xlswriter](https://xlswriter-docs.viest.me/zh-cn/an-zhuang)
 ```bash
