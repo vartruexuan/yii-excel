@@ -421,11 +421,7 @@ abstract class ExcelAbstract extends Component
                 if (!$this->fileSystem->writeStream($config->getPath(), fopen($filePath, 'r+'))) {
                     throw new ExcelException('upload file fail');
                 }
-                if (method_exists($config, 'getUrl')) {
-                    $url = $config->getUrl($config->getPath());
-                } else {
-                    $url = $this->getFileSystemUrl($config->getPath());
-                }
+                $url = $config->getUrl($config->getPath());
                 $exportData->setPath($url);
                 break;
             // 本地文件
@@ -608,28 +604,4 @@ abstract class ExcelAbstract extends Component
         }
         throw new InvalidConfigException('excel must be an application component.');
     }
-
-    /**
-     * 获取文件地址
-     *
-     * @param $url
-     * @return void
-     */
-    protected function getFileSystemUrl(string $path, bool $isSign = false)
-    {
-        // cdn
-        if ($this->fileSystem->cdn) {
-            return $this->fileSystem->getAdapter()->applyPathPrefix($path);
-        }
-
-        // 签名地址
-        if ($isSign) {
-            return $this->fileSystem->getAdapter()->getUrl($path);
-        }
-        // 原始地址
-        $scheme = $this->fileSystem->scheme ? $this->fileSystem->scheme : 'http';
-        $sourcePath = $this->fileSystem->getAdapter()->getSourcePath($path);
-        return "{$scheme}://{$sourcePath}";
-    }
-
 }

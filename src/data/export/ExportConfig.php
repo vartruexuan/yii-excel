@@ -176,6 +176,14 @@ class ExportConfig extends BaseObject
 
 
     /**
+     * 获取文件完整地址
+     *
+     * @param $path
+     * @return string
+     */
+    abstract function getUrl($path): string;
+
+    /**
      * 序列化
      *
      * @return array
