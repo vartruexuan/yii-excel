@@ -174,14 +174,16 @@ class ExportConfig extends BaseObject
         }, $this->getSheets());
     }
 
-
     /**
      * 获取文件完整地址
      *
      * @param $path
      * @return string
      */
-    abstract function getUrl($path): string;
+    public function getUrl(string $path)
+    {
+        return $path;
+    }
 
     /**
      * 序列化
