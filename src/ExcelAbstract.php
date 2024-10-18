@@ -359,7 +359,7 @@ abstract class ExcelAbstract extends Component
         }
         $this->trigger(static::EVENT_AFTER_IMPORT_DATA, $event);
 
-        return $result;
+        return $result ?? null;
     }
 
 
@@ -367,12 +367,11 @@ abstract class ExcelAbstract extends Component
      * 导出数据回调
      *
      * @param callable $callback 回调
+     * @param ExportConfig $config
+     * @param ExportSheet $sheet
      * @param int $page 页码
      * @param int $pageSize 限制每页数量
-     * @param ?int $count 总数
-     * @param $param 额外参数
-     * @param string $token
-     * @param string $sheetName
+     * @param int|null $totalCount
      * @return mixed
      */
     protected function exportDataCallback(callable $callback, ExportConfig $config, ExportSheet $sheet, int $page, int $pageSize, ?int $totalCount)
