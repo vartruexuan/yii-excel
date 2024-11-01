@@ -48,7 +48,7 @@ class ExportConfig extends BaseObject
      *
      * @var string
      */
-    public ?string $token = null;
+    public string $token = '';
 
 
     /**
@@ -58,13 +58,6 @@ class ExportConfig extends BaseObject
      */
     public $param = null;
 
-
-    /**
-     * 设置驱动
-     *
-     * @var null
-     */
-    public $driverClass = null;
 
     /**
      * 获取地址
@@ -142,7 +135,7 @@ class ExportConfig extends BaseObject
     /**
      * 获取token
      *
-     * @return void
+     * @return string|null
      */
     public function getToken()
     {
@@ -165,7 +158,7 @@ class ExportConfig extends BaseObject
     /**
      * 获取所有页名
      *
-     * @return void
+     * @return array|string[]
      */
     public function getSheetNames()
     {
@@ -177,7 +170,7 @@ class ExportConfig extends BaseObject
     /**
      * 获取文件完整地址
      *
-     * @param $path
+     * @param string $path
      * @return string
      */
     public function getUrl(string $path)

@@ -205,6 +205,8 @@ abstract class ExcelAbstract extends Component
      *
      * @param ExportConfig $config
      * @return void
+     * @throws ExcelException
+     * @throws \Throwable
      */
     public function export(ExportConfig $config)
     {
@@ -265,6 +267,8 @@ abstract class ExcelAbstract extends Component
      *
      * @param ImportConfig $config
      * @return void
+     * @throws ExcelException
+     * @throws \Throwable
      */
     public function import(ImportConfig $config)
     {
@@ -333,7 +337,7 @@ abstract class ExcelAbstract extends Component
      *
      * @param callable $callback
      * @param ImportConfig $config
-     * @param Sheet $sheet
+     * @param ImportSheet $sheet
      * @param array $row
      *
      * @return mixed|null
@@ -408,7 +412,7 @@ abstract class ExcelAbstract extends Component
      *
      * @param ExportConfig $config
      * @param string $filePath
-     * @param $exportData
+     * @param ExportData $exportData
      * @return void
      * @throws ExcelException
      */

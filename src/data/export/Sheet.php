@@ -2,7 +2,6 @@
 
 namespace vartruexuan\excel\data\export;
 
-use vartruexuan\excel\data\export\Column;
 use yii\base\BaseObject;
 
 /**
@@ -21,7 +20,7 @@ class Sheet extends BaseObject
     /**
      * 列头配置
      *
-     * @var \vartruexuan\excel\data\export\Column[]
+     * @var Column[]
      */
     public array $columns;
 
@@ -74,7 +73,7 @@ class Sheet extends BaseObject
     /**
      * 获取页码名
      *
-     * @return void
+     * @return string
      */
     public function getName()
     {
@@ -85,7 +84,7 @@ class Sheet extends BaseObject
     /**
      * 获取数据
      *
-     * @return void
+     * @return array|callable
      */
     public function getData()
     {
