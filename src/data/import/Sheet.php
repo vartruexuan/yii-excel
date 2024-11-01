@@ -109,19 +109,20 @@ class Sheet extends BaseObject
 
     /**
      * 获取name
-     * 
+     *
      * @return string
-     */    
+     */
     public function getName()
     {
         return $this->name;
     }
-    
-    
+
+
     /**
      * 获取最终列头信息
      *
-     * @return void
+     * @param array $cols
+     * @return array
      */
     public function getHeader(array $cols)
     {
@@ -135,7 +136,7 @@ class Sheet extends BaseObject
      *
      * @param $sheetData
      * @param $header
-     * @return void
+     * @return array|array[]
      */
     public function formatSheetDataByHeader($sheetData, $header)
     {
@@ -155,6 +156,4 @@ class Sheet extends BaseObject
     {
         return array_combine($header, $row);
     }
-
-
 }

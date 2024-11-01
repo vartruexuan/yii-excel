@@ -75,7 +75,8 @@ class Excel extends ExcelAbstract
      * 导出页码
      *
      * @param \vartruexuan\excel\data\export\Sheet $sheet
-     * @param $index
+     * @param ExportConfig $config
+     * @param int $index
      * @return void
      */
     protected function exportSheet(\vartruexuan\excel\data\export\Sheet $sheet, ExportConfig $config, $index = 0)
@@ -138,6 +139,7 @@ class Excel extends ExcelAbstract
      *
      * @param ImportConfig $config
      * @return ImportData
+     * @throws ExcelException
      */
     protected function importExcel(ImportConfig $config): ImportData
     {
@@ -161,7 +163,7 @@ class Excel extends ExcelAbstract
         $sheetList = $this->excel->sheetList();
         $sheetNames = [];
 
-        $sheets = array_map(function ($sheet) use (&$sheetNames) {
+        $sheets = array_map(function ($sheet) use (&$sheetNames, $sheetList) {
             $sheetName = $sheet->name;
             if ($sheet->readType == Sheet::SHEET_READ_TYPE_INDEX) {
                 $sheetName = $sheetList[$sheet->index];
@@ -197,6 +199,8 @@ class Excel extends ExcelAbstract
      * 导出页码
      *
      * @param Sheet $sheet
+     * @param ImportConfig $importConfig
+     * @param ImportData $importData
      * @return void
      */
     protected function importSheet(Sheet $sheet, ImportConfig $importConfig, ImportData &$importData)
@@ -225,14 +229,10 @@ class Excel extends ExcelAbstract
             $header = $sheet->getHeader($header);
         }
 
-        // 返回全量数据
-        if ($sheet->isReturnSheetData) {
-            $sheetData = $this->excel->getSheetData();
-            $sheetDataCount = count($sheetData ?? []);
-        }
-
         if ($sheet->callback || $header) {
             if ($sheet->isReturnSheetData) {
+                // 返回全量数据
+                $sheetData = $this->excel->getSheetData();
                 foreach ($sheetData as $key => &$row) {
                     $this->rowCallback($importConfig, $sheet, $row, $header);
                 }
@@ -251,8 +251,10 @@ class Excel extends ExcelAbstract
     /**
      * 执行行回调
      *
+     * @param ImportConfig $config
+     * @param Sheet $sheet
      * @param $row
-     * @param $header
+     * @param null $header
      * @return void
      */
     protected function rowCallback(ImportConfig $config, Sheet $sheet, $row, $header = null)
@@ -271,6 +273,7 @@ class Excel extends ExcelAbstract
      *
      * @param $filePath
      * @return void
+     * @throws ExcelException
      */
     protected function checkFile($filePath)
     {
