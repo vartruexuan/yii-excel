@@ -6,6 +6,7 @@ use vartruexuan\excel\data\progress\ProgressData;
 use vartruexuan\excel\events\ErrorEvent;
 use vartruexuan\excel\events\ExportDataEvent;
 use vartruexuan\excel\events\ExportEvent;
+use vartruexuan\excel\events\ExportOutputEvent;
 use vartruexuan\excel\events\ExportSheetEvent;
 use vartruexuan\excel\events\ImportDataEvent;
 use vartruexuan\excel\events\ImportEvent;
@@ -32,6 +33,7 @@ class ExcelProgressBehavior extends Behavior
             ExcelAbstract::EVENT_AFTER_EXPORT_SHEET => 'afterExportSheet',
             ExcelAbstract::EVENT_BEFORE_EXPORT_DATA => 'beforeExportData',
             ExcelAbstract::EVENT_AFTER_EXPORT_DATA => 'afterExportData',
+            ExcelAbstract::EVENT_BEFORE_EXPORT_OUTPUT => 'beforeExportOutput',
 
             // 导入
             ExcelAbstract::ENVENT_AFTER_IMPORT => 'afterImport',
@@ -89,6 +91,9 @@ class ExcelProgressBehavior extends Behavior
         $this->getProgressInstance($event)->setProgressRecord($token, $event->exportConfig->getSheetNames(), ProgressData::PROGRESS_STATUS_PROCESS);
     }
 
+    
+  
+    
 
     /**
      * 执行导出之后
@@ -152,6 +157,20 @@ class ExcelProgressBehavior extends Behavior
             $listCount
         );
     }
+
+    /**
+     * 
+     * 导出输出之前
+     * 
+     * @param ExportOutputEvent $event
+     * @return void
+     */
+    public function beforeExportOutput(ExportOutputEvent $event)
+    {
+        $token = $event->exportConfig->getToken();
+        $this->getProgressInstance($event)->setProgressRecord($token, null, ProgressData::PROGRESS_STATUS_OUTPUT);
+    }
+    
 
     /**
      * 导入之前

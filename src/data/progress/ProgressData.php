@@ -17,6 +17,7 @@ class ProgressData extends BaseObject
     public const PROGRESS_STATUS_PROCESS = 2; // 处理中
     public const PROGRESS_STATUS_END = 3; // 处理完成
     public const PROGRESS_STATUS_FAIL = 4; // 处理失败
+    public const PROGRESS_STATUS_OUTPUT = 5; // 输出中
 
 
     public int $total = 0;

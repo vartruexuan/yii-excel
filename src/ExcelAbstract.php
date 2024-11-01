@@ -15,6 +15,7 @@ use vartruexuan\excel\data\export\Sheet as ExportSheet;
 use vartruexuan\excel\events\ErrorEvent;
 use vartruexuan\excel\events\ExportDataEvent;
 use vartruexuan\excel\events\ExportEvent;
+use vartruexuan\excel\events\ExportOutputEvent;
 use vartruexuan\excel\events\ImportDataEvent;
 use vartruexuan\excel\events\ImportEvent;
 use vartruexuan\excel\exceptions\ExcelException;
@@ -78,6 +79,17 @@ abstract class ExcelAbstract extends Component
      * 导出数据之后
      */
     const EVENT_AFTER_EXPORT_DATA = 'afterExportData';
+
+    /**
+     * 导出输出文件之前
+     */
+    const EVENT_BEFORE_EXPORT_OUTPUT = 'beforeExportOutput';
+
+    /**
+     * 导出输出文件之后
+     */
+    const EVENT_AFTER_EXPORT_OUTPUT = 'afterExportOutput';
+
 
     /**
      * 导入之前
@@ -418,6 +430,10 @@ abstract class ExcelAbstract extends Component
      */
     protected function exportOutPut(ExportConfig $config, string $filePath, ExportData &$exportData)
     {
+        $event = new ExportOutputEvent([
+            'exportConfig' => $config,
+        ]);
+        $this->trigger(static::EVENT_BEFORE_EXPORT_OUTPUT, $event);
         switch ($config->outPutType) {
             // 上传
             case ExportConfig::OUT_PUT_TYPE_UPLOAD:
@@ -456,6 +472,7 @@ abstract class ExcelAbstract extends Component
                 throw new ExcelException('outPutType error');
                 break;
         }
+        $this->trigger(static::EVENT_AFTER_EXPORT_OUTPUT, $event);
     }
 
 
