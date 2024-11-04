@@ -61,7 +61,7 @@ class Column extends BaseObject
     /**
      * 额外配置
      *
-     * @var
+     * @var array
      */
     public array $options = [];
 

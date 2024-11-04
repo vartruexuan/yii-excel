@@ -38,7 +38,7 @@ class ImportData extends BaseObject
      *
      * @param $sheetData
      * @param $sheetName
-     * @return void
+     * @return ImportData
      */
     public function addSheetData($sheetData, $sheetName = 'sheet1')
     {

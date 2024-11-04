@@ -14,12 +14,12 @@ class ExcelManager extends BaseObject
     /**
      * 获取操作实例
      *
-     * @param $componentId
-     * @param $defaultDriverClass
+     * @param string|null $componentId
+     * @param string $defaultDriverClass
      * @return mixed|object|null
      * @throws ExcelException
      */
-    public function getExcelInstance($componentId = null, $defaultDriverClass = '\vartruexuan\excel\drivers\xlswriter\Excel')
+    public function getExcelInstance(?string $componentId = null, string $defaultDriverClass = '\vartruexuan\excel\drivers\xlswriter\Excel')
     {
         if ($componentId) {
             if (!\Yii::$app->has($componentId)) {

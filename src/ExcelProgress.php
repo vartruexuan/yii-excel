@@ -39,17 +39,9 @@ class ExcelProgress extends Component
     /**
      * 进度信息失效时长(秒)
      *
-     * @var float|int
+     * @var int
      */
-    public $expireTime = 60 * 60;
-
-    /**
-     * 进度状态
-     */
-    public const PROGRESS_STATUS_AWAIT = 1; // 待处理
-    public const PROGRESS_STATUS_PROCESS = 2; // 处理中
-    public const PROGRESS_STATUS_END = 3; // 处理完成
-    public const PROGRESS_STATUS_FAIL = 4; // 处理失败
+    public  $expireTime = 60 * 60;
 
 
     public function init()
@@ -75,7 +67,7 @@ class ExcelProgress extends Component
      */
     public function initProgressRecord(string $token)
     {
-        return $this->setProgressRecord($token, [], self::PROGRESS_STATUS_AWAIT);
+        return $this->setProgressRecord($token, [], ProgressData::PROGRESS_STATUS_AWAIT);
     }
 
     /**
@@ -85,15 +77,14 @@ class ExcelProgress extends Component
      * @param array|null $sheetList
      * @param int|null $status
      * @param array|null $data
-     * @return void
+     * @return ExcelProgress
      */
-    public function setProgressRecord(string $token, ?array $sheetList = null, ?int $status = self::PROGRESS_STATUS_PROCESS, ?array $data = null)
+    public function setProgressRecord(string $token, ?array $sheetList = null, ?int $status = ProgressData::PROGRESS_STATUS_PROCESS, ?array $data = null)
     {
         $progressRecord = $this->getProgressRecord($token);
         $progressRecord = $progressRecord ?: new ProgressRecord([
             'token' => $token,
         ]);
-
 
         $progressRecord->progress->status = $status;
 
@@ -115,9 +106,10 @@ class ExcelProgress extends Component
      * 获取进度信息
      *
      * @param string $token
+     * @param bool $isGetProgress
      * @return ProgressRecord|null
      */
-    public function getProgressRecord(string $token, $isGetProgress = false)
+    public function getProgressRecord(string $token, bool $isGetProgress = false)
     {
         $result = $this->redis->get($this->getKeyByProgressRecord($token));
         if (!$result) {
@@ -158,7 +150,7 @@ class ExcelProgress extends Component
                 'progress' => 0,
                 'success' => 0,
                 'fail' => 0,
-                'status' => self::PROGRESS_STATUS_AWAIT,
+                'status' => ProgressData::PROGRESS_STATUS_AWAIT,
             ]))->toArray());
         }
         $this->resetProgressTime($token);
@@ -170,6 +162,7 @@ class ExcelProgress extends Component
      * @param string $token
      * @param string $sheetName
      * @param int|null $status
+     * @param int $total
      * @param int $progress
      * @param int $success
      * @param int $fail
@@ -216,7 +209,7 @@ class ExcelProgress extends Component
             'progress' => intval($result['progress'] ?? 0),
             'success' => intval($result['success'] ?? 0),
             'fail' => intval($result['fail'] ?? 0),
-            'status' => intval($result['status'] ?? self::PROGRESS_STATUS_AWAIT),
+            'status' => intval($result['status'] ?? ProgressData::PROGRESS_STATUS_AWAIT),
         ]);
     }
 
@@ -334,7 +327,7 @@ class ExcelProgress extends Component
     /**
      * 获取前缀
      *
-     * @return void
+     * @return string
      */
     protected function getPrefix()
     {

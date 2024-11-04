@@ -15,7 +15,6 @@ use yii\helpers\FileHelper;
  */
 class ImportConfig extends Model
 {
-
     /**
      * 导入地址
      *
@@ -34,7 +33,7 @@ class ImportConfig extends Model
     /**
      * 异步条件时设置对应token
      *
-     * @var
+     * @var string
      */
     public string $token = '';
 
@@ -43,7 +42,6 @@ class ImportConfig extends Model
      * @var Sheet[]
      */
     public array $sheets = [];
-
 
     /**
      * 临时文件地址
@@ -54,16 +52,9 @@ class ImportConfig extends Model
 
 
     /**
-     * 驱动
-     *
-     * @var string|ExcelAbstract
-     */
-    public $dirverClass = null;
-
-    /**
      * 获取页配置
      *
-     * @return array|shee
+     * @return array
      */
     public function getSheets(): array
     {
@@ -84,7 +75,7 @@ class ImportConfig extends Model
     /**
      * 获取token
      *
-     * @return void
+     * @return string
      */
     public function getToken()
     {
@@ -119,7 +110,7 @@ class ImportConfig extends Model
      * 添加读取页
      *
      * @param Sheet $sheet
-     * @return void
+     * @return ImportConfig
      */
     public function addSheet(Sheet $sheet)
     {
@@ -142,7 +133,7 @@ class ImportConfig extends Model
     /**
      * 设置token
      *
-     * @return void
+     * @return ImportConfig
      */
     public function setToken($token)
     {
@@ -186,5 +177,4 @@ class ImportConfig extends Model
             'token' => $this->getToken(),
         ];
     }
-
 }
